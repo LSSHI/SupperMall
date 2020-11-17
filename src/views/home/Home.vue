@@ -6,7 +6,10 @@
     <home-swiper :banner="banner"/>
     <recommend-view :recommend="recommend"/>
     <feature-view/>
-    <tab-control class="tab-control" :tabData="['流行','新款','精品']"/>
+    <tab-control class="tab-control"
+                 :tabData="['流行','新款','精品']"
+                 @tabClick="tabClick"/>
+    <good-list :goodsData="showGoods"/>
 
     <ul>
       <li>列表</li>
@@ -76,12 +79,11 @@
   import FeatureView from "./childComps/FeatureView";
 
 
-
-  import {getMutiData} from 'network/home'
+  import {getMutiData,getGoodsData} from 'network/home'
 
   export default {
     name: "Home",
-    components:{
+    components: {
       FeatureView,
       NavBar,
       homeSwiper,
@@ -89,19 +91,71 @@
       FeatureView,
       TabControl
     },
-    data(){
-      return{
+    data() {
+      return {
         banner: [],
-        recommend: []
+        recommend: [],
+        goods: {
+          'pop': {
+            page: 0, list: []
+          },
+          'new': {
+            page: 0, list: []
+          },
+          'sell': {
+            page: 0, list: []
+          }
+        },
+        currentType: 'pop',
       }
     },
     created() {
-      getMutiData().then(res=>{
-        this.banner = res.data.banner.list;
-        this.recommend = res.data.recommend.list;
-      })
+      //获取轮播数据
+      this.getMutiData();
+      //获取流行，新品，精品
+      this.getGoodsData('pop');
+      this.getGoodsData('new');
+      this.getGoodsData('sell');
+    },
+
+    computed: {
+      showGoods() {
+        return this.goods[this.currentType].list
+      }
+    },
+
+    methods: {
+
+      tabClick(index) {
+        switch (index) {
+          case 0:
+            this.currentType = 'pop'
+            break
+          case 1:
+            this.currentType = 'new'
+            break
+          case 2:
+            this.currentType = 'sell'
+            break
+        }
+      },
+
+      getMutiData() {
+        getMutiData().then(res => {
+          this.banner = res.data.banner.list;
+          this.recommend = res.data.recommend.list;
+        })
+      },
+      getGoodsData(type) {
+        let page = this.goods[type].page + 1;
+        getGoodsData(type, page).then(res => {
+          console.log(res.data.list);
+          this.goods[type].list.push(...res.data.list);
+          this.goods[type].page = this.goods[type].page + 1;
+        });
+      }
     }
-  }
+  };
 </script>
 
 <style scoped>
@@ -122,5 +176,6 @@
   .tab-control {
     position: sticky;
     top: 44px;
+    z-index: 9;
   }
 </style>
